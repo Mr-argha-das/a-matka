@@ -1,0 +1,367 @@
+@import "tailwindcss";
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --theme-bg: #07152f;
+  --theme-bg-deep: #020817;
+  --theme-panel: rgba(15, 36, 73, 0.96);
+  --theme-panel-soft: rgba(20, 48, 94, 0.86);
+  --theme-field: rgba(255, 255, 255, 0.96);
+  --theme-border: rgba(147, 197, 253, 0.22);
+  --theme-border-red: rgba(96, 165, 250, 0.34);
+  --theme-red: #3b82f6;
+  --theme-red-dark: #1d4ed8;
+  --theme-text: #ffffff;
+  --theme-muted: #bfdbfe;
+  --theme-gold: #facc15;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(59, 130, 246, 0.3), transparent 32rem),
+    radial-gradient(circle at 100% 20%, rgba(37, 99, 235, 0.22), transparent 28rem),
+    linear-gradient(135deg, #020817 0%, #0b1f45 48%, #102a56 100%);
+  background-color: var(--theme-bg);
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Enable scroll only on the main content wrapper */
+#root,
+.app-container {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: #646cff;
+} */
+
+/* button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+} */
+
+@media (prefers-color-scheme: dark) {
+}
+
+/* Bottom Nav */
+
+/* Container for fixed positioning */
+.bottom-nav-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+  /* Adjust max-width as needed for your app's layout */
+  max-width: 448px;
+  margin: 0 auto;
+}
+
+/* --- Main Navigation Bar Styling --- */
+
+.bottom-nav-bar {
+  /* Set a fixed height and the desired width */
+  width: 100%;
+  max-width: 448px; /* Matching the container max-width */
+  height: 60px; /* Height of the main bar section */
+
+  /* Background style from the image */
+  background-color: #1a1a2e; /* A dark, slightly purplish-black */
+  backdrop-filter: blur(15px); /* Mimics the backdrop-blur */
+
+  /* Rounded top corners */
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
+
+  /* Flexbox to arrange items */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px; /* Horizontal padding for the icons */
+
+  /* Shadow is subtle in the original, you can adjust */
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+
+  /* Crucial: Relative positioning for absolute children */
+  position: relative;
+}
+
+/* --- Icon Groups --- */
+.nav-icons-group {
+  display: flex;
+  align-items: center;
+  gap: 40px; /* Spacing between the icons, adjusted to fit the layout */
+  color: #a0a0a0; /* Gray color for inactive icons */
+}
+
+.nav-icon {
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.nav-icon:hover {
+  color: #ffffff;
+}
+
+/* --- Center Home Button Styling --- */
+
+/* This is the container for the button which must be absolutely positioned */
+.nav-center-placeholder {
+  /* Absolute position to center the button */
+  position: absolute;
+  top: -30px; /* Half the button height to make it stick out */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60; /* Higher z-index to be on top */
+}
+
+.nav-center-button-wrapper {
+  /* No default styles, just a wrapper for the link */
+}
+
+.nav-center-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+
+  /* The purple/pink gradient from the image */
+  background: linear-gradient(135deg, #79049a, #212b61);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Shadow for the floating effect */
+  box-shadow: 0 4px 15px rgba(121, 4, 154, 0.6);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.nav-center-button:hover {
+  transform: scale(1.05);
+}
+
+.nav-icon-home {
+  color: white;
+}
+
+/* --- Creating the Custom Curvature (Inward Notch Effect) --- */
+/* The key to the design: creating the illusion of a notch */
+
+/* The two crescent elements placed on the sides of the floating button */
+
+.bottom-nav-bar::before,
+.bottom-nav-bar::after {
+  content: "";
+  position: absolute;
+  top: 0px;
+  width: 25px;
+  height: 25px;
+  background-color: transparent; /* Makes the main bar invisible here */
+  box-shadow: 0 0 0 40px #fff;
+  z-index: 40; /* Lower than the nav-center-placeholder */
+}
+
+/* Left crescent */
+.bottom-nav-bar::before {
+  left: calc(50% - 30px - 25px);
+  border-top-right-radius: 50%; /* Inward curve */
+}
+
+/* Right crescent */
+.bottom-nav-bar::after {
+  right: calc(
+    50% - 30px - 25px
+  ); /* Center point - half button width - width of this element */
+  border-top-left-radius: 50%; /* Inward curve */
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeInOut 12s ease forwards;
+}
+
+.theme-page {
+  color: var(--theme-text);
+}
+
+.theme-shell {
+  background:
+    radial-gradient(circle at 50% -6%, rgba(96, 165, 250, 0.28), transparent 28rem),
+    radial-gradient(circle at 94% 22%, rgba(37, 99, 235, 0.25), transparent 24rem),
+    linear-gradient(135deg, #020817 0%, #0b1f45 50%, #102a56 100%);
+}
+
+.theme-card {
+  background: linear-gradient(145deg, #173b73, #0b244c);
+  border: 1px solid var(--theme-border-red);
+  border-radius: 32px;
+  box-shadow:
+    0 22px 60px rgba(2, 8, 23, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.theme-panel {
+  background: rgba(15, 46, 94, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.theme-label {
+  color: var(--theme-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.theme-input {
+  width: 100%;
+  border-radius: 22px;
+  border: 1px solid rgba(96, 165, 250, 0.42);
+  background: var(--theme-field);
+  color: #0f274e;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.theme-input::placeholder {
+  color: rgba(30, 64, 175, 0.55);
+}
+
+.theme-input:focus {
+  border-color: rgba(59, 130, 246, 0.9);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+  background: #ffffff;
+}
+
+.theme-icon {
+  color: var(--theme-muted);
+}
+
+.theme-link {
+  color: #bfdbfe;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.theme-button {
+  border-radius: 22px;
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 48%, #1d4ed8 100%);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.3);
+  transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+}
+
+.theme-button:hover {
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.4);
+
+.admin-theme {
+  min-height: 100vh;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.2), transparent 30rem),
+    linear-gradient(135deg, #06142e 0%, #0b1f45 55%, #102a56 100%);
+}
+  transform: translateY(-1px);
+}
+
+.theme-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+}
+
+.theme-alert-error {
+  background: rgba(95, 8, 8, 0.74);
+  border-left: 4px solid #ff2020;
+  color: #ff7b7b;
+}
+
+.theme-alert-success {
+  background: rgba(9, 80, 37, 0.42);
+  border-left: 4px solid #2ee66d;
+  color: #a4f7bf;
+}
+
+.theme-alert-info {
+  background: rgba(48, 35, 20, 0.72);
+  border-left: 4px solid var(--theme-gold);
+  color: #ffd48a;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* .animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+} */
