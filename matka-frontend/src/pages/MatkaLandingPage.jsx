@@ -109,10 +109,10 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="text-white font-sans">
-      <div className="flex flex-col max-w-md mx-auto h-screen">
-        {/* HEADER */}
-        <div className="theme-card flex flex-col items-center rounded-b-[30px] border-x-0 border-t-0 px-4 py-4 text-sm">
+    <div className="h-full overflow-hidden font-sans text-white">
+      <div className="mx-auto flex h-full min-h-0 max-w-md flex-col overflow-hidden">
+        {/* FIXED DASHBOARD ACTIONS */}
+        <div className="theme-card z-10 flex shrink-0 flex-col items-center rounded-b-[30px] border-x-0 border-t-0 px-4 py-4 text-sm shadow-lg shadow-black/15">
           <div className="w-full flex justify-between items-center">
             <a
               href="/add-points"
@@ -173,7 +173,7 @@ export default function Dashboard() {
         </div>
 
         {/* MARKET LIST */}
-        <main className="flex-1 px-3 py-3 pb-20">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 pb-28 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {isLoading && (
             <p className="text-center text-cyan-400">Loading markets...</p>
           )}
@@ -193,17 +193,6 @@ export default function Dashboard() {
         />
       )}
 
-      <a
-        href={getWhatsAppUrl(whatsappNumber, "Hello, I need help with Natraj 777.")}
-        onClick={(e) => {
-          e.preventDefault();
-          openWhatsApp(whatsappNumber, "Hello, I need help with Natraj 777.");
-        }}
-        aria-label="Contact support on WhatsApp"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-[0_8px_30px_rgba(34,197,94,0.45)] transition hover:scale-105 hover:bg-green-400"
-      >
-        <BsWhatsapp size={28} />
-      </a>
     </div>
   );
 }
