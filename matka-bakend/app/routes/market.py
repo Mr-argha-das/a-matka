@@ -2,15 +2,18 @@ import json
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from ..models import Market
-
-from datetime import datetime
+from ..models import Market, Result
 
 IST = ZoneInfo("Asia/Kolkata")
 
 def to_time(t: str):
-    """Convert '09:00 AM' → time object"""
-    return datetime.strptime(t, "%I:%M %p").time()
+    """Accept both time formats used by existing market records."""
+    for fmt in ("%I:%M %p", "%H:%M"):
+        try:
+            return datetime.strptime(t.strip(), fmt).time()
+        except (AttributeError, ValueError):
+            continue
+    raise HTTPException(status_code=422, detail=f"Invalid market time: {t}")
 
 def is_market_running(open_time: str, close_time: str):
     now = datetime.now(IST)
@@ -24,18 +27,38 @@ def is_market_running(open_time: str, close_time: str):
 
     return now >= open_dt or now <= close_dt
 
-def get_digit(num_str: str):
-    """Return last digit of sum or '-'"""
-    if not num_str or num_str == "-" or len(num_str) != 3:
-        return "-"
-    total = sum(int(d) for d in num_str)
-    return str(total % 10)
+def result_fields(market_id: str):
+    result = Result.objects(market_id=market_id).order_by("-date").first()
+    open_panna = result.open_panna if result and result.open_panna else "-"
+    open_digit = result.open_digit if result and result.open_digit else "-"
+    close_panna = result.close_panna if result and result.close_panna else "-"
+    close_digit = result.close_digit if result and result.close_digit else "-"
 
-def build_result(open_result, close_result):
-    """Build final result '248-4-112' """
-    if open_result == "-" or close_result == "-":
-        return "-"
-    return f"{open_result}-{get_digit(open_result)}-{close_result}"
+    final_result = "-"
+    if open_panna != "-":
+        final_result = f"{open_panna}-{open_digit}-{close_digit}-{close_panna}"
+
+    return {
+        "open_result": open_panna,
+        "close_result": close_panna,
+        "open_digit": open_digit,
+        "close_digit": close_digit,
+        "final_result": final_result,
+    }
+
+
+def serialize_market(market):
+    data = json.loads(market.to_json())
+    data.update(result_fields(str(market.id)))
+    data.update({
+        "id": str(market.id),
+        "status": (
+            "Market Running"
+            if market.status and is_market_running(market.open_time, market.close_time)
+            else "Market Closed"
+        ),
+    })
+    return data
 
 router = APIRouter(prefix="/market")
 
@@ -44,18 +67,34 @@ router = APIRouter(prefix="/market")
 # CREATE MARKET
 # ---------------------------
 @router.post("/create")
-def create_market(name: str, open_time: str, close_time: str , open_result : str = "-", close_result : str = "-"):
+def create_market(
+    name: str,
+    open_time: str,
+    close_time: str,
+    open_result: str = "-",
+    close_result: str = "-",
+    hindi: str = "",
+    marketType: str = "Market",
+):
     if Market.objects(name=name).first():
         raise HTTPException(400, "Market already exists")
 
     market = Market(
         name=name,
+        hindi=hindi,
         open_time=open_time,
         close_time=close_time,
-        open_result=open_result,
-        close_result=close_result
+        marketType=marketType,
     )
     market.save()
+
+    if open_result != "-" or close_result != "-":
+        Result(
+            market_id=str(market.id),
+            open_panna=None if open_result == "-" else open_result,
+            close_panna=None if close_result == "-" else close_result,
+        ).save()
+
     return {"msg": "Market created successfully", "market": json.loads(market.to_json())}
 
 
@@ -105,21 +144,7 @@ def get_market(market_id: str):
     if not m:
         raise HTTPException(404, "Market not found")
 
-    status = "Market Running" if is_market_running(m.open_time, m.close_time) else "Market Closed"
-    final_result = build_result(m.open_result, m.close_result)
-
-    data = {
-        "id": str(m.id),
-        "name": m.name,
-        "open_time": m.open_time,
-        "close_time": m.close_time,
-        "open_result": m.open_result,
-        "close_result": m.close_result,
-        "final_result": final_result,
-        "status": status
-    }
-
-    return data
+    return serialize_market(m)
 
 # ---------------------------
 # GET ALL MARKETS (FULL + CLEAN)
@@ -130,19 +155,7 @@ def get_all_markets():
     markets = []
 
     for m in Market.objects.order_by("open_time"):
-        status = "Market Running" if is_market_running(m.open_time, m.close_time) else "Market Closed"
-        final_result = build_result(m.open_result, m.close_result)
-
-        markets.append({
-            "id": str(m.id),
-            "name": m.name,
-            "open_time": m.open_time,
-            "close_time": m.close_time,
-            "open_result": m.open_result,
-            "close_result": m.close_result,
-            "final_result": final_result,
-            "status": status
-        })
+        markets.append(serialize_market(m))
 
     return {"status": "success", "count": len(markets), "markets": markets}
 
