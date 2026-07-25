@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     SMS_API_TOKEN: str = ""
     SMS_API_BASE_URL: str = "https://connect.muzztech.com/api/V1"
     SMS_OTP_TEMPLATE: str = "OTP"
-    CORS_ORIGINS: str = "https://game.natraj777.com,https://api.natraj777.com,http://localhost:5173,http://127.0.0.1:5173"
+    CORS_ORIGINS: str = "https://game.natraj777.com,https://api.natraj777.com,http://localhost:5173,http://127.0.0.1:5173,https://natraj777.com"
 
     @property
     def cors_origins_list(self) -> list[str]:
