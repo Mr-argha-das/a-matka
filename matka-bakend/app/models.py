@@ -60,6 +60,7 @@ class Transaction(Document):
     tx_id = StringField(required=True, unique=True)
 
     user_id = StringField(required=True)
+    bid_id = StringField()
 
     razorpay_order_id = StringField()
 

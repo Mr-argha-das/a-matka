@@ -17,6 +17,7 @@ export default function TodayResultMarketHistory({ refreshFlag }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [settlingId, setSettlingId] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -132,10 +133,6 @@ export default function TodayResultMarketHistory({ refreshFlag }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleFilter = () => {
-    fetchResults(date);
-  };
-
   const handleDelete = async (id) => {
     if (!id) return alert("Invalid id");
     if (!confirm("Are you sure you want to delete this result?")) return;
@@ -151,6 +148,30 @@ export default function TodayResultMarketHistory({ refreshFlag }) {
       alert(err?.response?.data?.detail || "Delete failed");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleResettle = async (id) => {
+    if (!id) return alert("Invalid id");
+
+    setSettlingId(id);
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/admin/result/${id}/resettle`,
+        {},
+        { headers }
+      );
+      const settlement = res.data || {};
+      alert(
+        `Settlement completed: ${settlement.winner_count || 0} winner(s), ` +
+          `${settlement.total_payout || 0} points added.`
+      );
+      await fetchResults(date);
+    } catch (err) {
+      console.error("Settlement error:", err);
+      alert(err?.response?.data?.detail || "Settlement failed");
+    } finally {
+      setSettlingId(null);
     }
   };
 
@@ -260,11 +281,18 @@ export default function TodayResultMarketHistory({ refreshFlag }) {
                       {displayDigit(r.close_digit)} -{" "}
                       {displayPanna(r.close_panna)}
                     </td>
-                    <td className="p-1.5">
+                    <td className="p-1.5 flex gap-2">
+                      <button
+                        onClick={() => handleResettle(r.id)}
+                        disabled={settlingId === r.id}
+                        className="bg-green-600 text-white px-3 py-1 rounded disabled:opacity-60"
+                      >
+                        {settlingId === r.id ? "Settling..." : "Re-settle"}
+                      </button>
                       <button
                         onClick={() => handleDelete(r.id)}
                         disabled={deletingId === r.id}
-                        className="bg-red-500 text-white px-3 py- rounded"
+                        className="bg-red-500 text-white px-3 py-1 rounded disabled:opacity-60"
                       >
                         {deletingId === r.id ? "Deleting..." : "Delete"}
                       </button>

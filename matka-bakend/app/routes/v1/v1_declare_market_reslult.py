@@ -1,12 +1,14 @@
 import uuid
+from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
+
 from app.auth import get_current_user, require_admin
 from app.models import Bid, Market, RateChart, Result, Transaction, Wallet
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-# from ..auth import require_admin
-import datetime
 
 router = APIRouter(prefix="/api/admin", tags=["Market Result Management"])
+IST = ZoneInfo("Asia/Kolkata")
 
 
 # -----------------------------
@@ -36,117 +38,146 @@ class ResultDeclare(BaseModel):
     close_panna: str = None
 
 
-# -----------------------------
-# SETTLEMENT LOGIC
-# -----------------------------
-import uuid
-from datetime import datetime
-
-def settle_results(market_id: str, result_obj: Result, session: str):
-
-    chart = RateChart.objects().first()
-    if not chart:
-        print("Rate chart not found!")
-        return
-
-    RATE_MAP = {
-        "single": chart.single_digit_x,
-        "jodi": chart.jodi_digit_x,
-        "single_panna": chart.single_pana_x,
-        "double_panna": chart.double_pana_x,
-        "triple_panna": chart.tripple_pana_x,
-        "half_sangam": chart.half_sangam_x,
-        "full_sangam": chart.full_sangam_x,
+def payout_rate(chart: RateChart, game_type: str) -> float:
+    field_prefixes = {
+        "single": "single_digit",
+        "jodi": "jodi_digit",
+        "single_panna": "single_pana",
+        "sp": "single_pana",
+        "double_panna": "double_pana",
+        "dp": "double_pana",
+        "triple_panna": "tripple_pana",
+        "tp": "tripple_pana",
+        "half_sangam": "half_sangam",
+        "full_sangam": "full_sangam",
     }
+    prefix = field_prefixes.get(game_type)
+    if not prefix:
+        return 0
 
-    open_digit = result_obj.open_digit
-    close_digit = result_obj.close_digit
-    open_panna = result_obj.open_panna
-    close_panna = result_obj.close_panna
+    configured_multiplier = getattr(chart, f"{prefix}_x", 0) or 0
+    if configured_multiplier > 0:
+        return float(configured_multiplier)
 
-    bids = Bid.objects(
-        market_id=market_id,
-        session=session,
-        is_settled=False
+    stake = getattr(chart, f"{prefix}_1", 0) or 0
+    winning = getattr(chart, f"{prefix}_2", 0) or 0
+    return float(winning) / float(stake) if stake > 0 else 0
+
+
+def result_day_bounds(result_date):
+    if isinstance(result_date, str):
+        result_date = datetime.fromisoformat(result_date)
+    result_day = result_date.date()
+    start_ist = datetime.combine(result_day, time.min, tzinfo=IST)
+    end_ist = start_ist + timedelta(days=1)
+    return (
+        start_ist.astimezone(timezone.utc).replace(tzinfo=None),
+        end_ist.astimezone(timezone.utc).replace(tzinfo=None),
     )
 
+
+def is_winning_bid(bid, result_obj: Result, session: str) -> bool:
+    open_digit = result_obj.open_digit or "-"
+    close_digit = result_obj.close_digit or "-"
+    open_panna = result_obj.open_panna or "-"
+    close_panna = result_obj.close_panna or "-"
+
+    if bid.game_type == "single":
+        expected = open_digit if session == "open" else close_digit
+        return bid.session == session and bid.digit == expected
+
+    if bid.game_type in {"single_panna", "sp", "double_panna", "dp", "triple_panna", "tp"}:
+        expected = open_panna if session == "open" else close_panna
+        return bid.session == session and bid.digit == expected
+
+    if session != "close":
+        return False
+
+    if bid.game_type == "jodi":
+        return (
+            open_digit != "-"
+            and close_digit != "-"
+            and bid.digit == open_digit + close_digit
+        )
+
+    if bid.game_type == "half_sangam":
+        parts = bid.digit.split("-")
+        if len(parts) != 2:
+            return False
+        panna, digit = parts
+        return (
+            (panna == open_panna and digit == close_digit)
+            or (panna == close_panna and digit == open_digit)
+        )
+
+    if bid.game_type == "full_sangam":
+        parts = bid.digit.split("-")
+        return (
+            len(parts) == 2
+            and parts[0] == open_panna
+            and parts[1] == close_panna
+        )
+
+    return False
+
+
+def settle_results(market_id: str, result_obj: Result, session: str):
+    chart = RateChart.objects().first()
+    if not chart:
+        raise HTTPException(500, "Rate chart not found")
+
+    start_utc, end_utc = result_day_bounds(result_obj.date)
+    bids = Bid.objects(
+        market_id=market_id,
+        bid_date__gte=start_utc,
+        bid_date__lt=end_utc,
+        is_settled=False,
+    )
+    composite_games = {"jodi", "half_sangam", "full_sangam"}
+    settled_count = 0
+    winner_count = 0
+    total_payout = 0
+
     for bid in bids:
-        win = False
+        if session == "open" and bid.game_type in composite_games:
+            continue
+        if bid.game_type not in composite_games and bid.session != session:
+            continue
 
-        # ---------------- SINGLE ----------------
-        if bid.game_type == "single":
-            if session == "open" and bid.digit == open_digit:
-                win = True
-            elif session == "close" and bid.digit == close_digit:
-                win = True
-
-        # ---------------- JODI ----------------
-        elif bid.game_type == "jodi":
-            if open_digit != "-" and close_digit != "-":
-                if bid.digit == open_digit + close_digit:
-                    win = True
-
-        # ---------------- SINGLE PANNA ----------------
-        elif bid.game_type == "single_panna":
-            if session == "open" and bid.digit == open_panna:
-                win = True
-            elif session == "close" and bid.digit == close_panna:
-                win = True
-
-        # ---------------- DOUBLE PANNA ----------------
-        elif bid.game_type == "double_panna":
-            if session == "open" and bid.digit == open_panna:
-                win = True
-            elif session == "close" and bid.digit == close_panna:
-                win = True
-
-        # ---------------- TRIPLE PANNA ----------------
-        elif bid.game_type == "triple_panna":
-            if session == "open" and bid.digit == open_panna:
-                win = True
-            elif session == "close" and bid.digit == close_panna:
-                win = True
-
-        # ---------------- HALF SANGAM ----------------
-        elif bid.game_type == "half_sangam":
-            if open_digit != "-" and close_digit != "-":
-                panna, digitx = bid.digit.split("-")
-
-                if panna == open_panna and digitx == close_digit:
-                    win = True
-
-                if panna == close_panna and digitx == open_digit:
-                    win = True
-
-        # ---------------- FULL SANGAM ----------------
-        elif bid.game_type == "full_sangam":
-            if open_panna != "-" and close_panna != "-":
-                op, cp = bid.digit.split("-")
-                if op == open_panna and cp == close_panna:
-                    win = True
-
-        # ---------------- PAYOUT ----------------
-        if win:
-            rate = RATE_MAP.get(bid.game_type, 0)
+        if is_winning_bid(bid, result_obj, session):
+            rate = payout_rate(chart, bid.game_type)
+            if rate <= 0:
+                raise HTTPException(500, f"Winning rate is not configured for {bid.game_type}")
             amount = bid.points * rate
 
             wallet = Wallet.objects(user_id=bid.user_id).first()
-            if wallet:
-                wallet.update(inc__balance=amount)
+            if not wallet:
+                wallet = Wallet(user_id=bid.user_id, balance=0).save()
+            wallet.update(
+                inc__balance=amount,
+                set__updated_at=datetime.utcnow(),
+            )
 
-                Transaction(
-                    tx_id=str(uuid.uuid4()),
-                    user_id=str(bid.user_id),
-                    bid_id=str(bid.id),
-                    amount=amount,
-                    payment_method="Win",
-                    status="Approved",
-                    created_at=datetime.utcnow(),
-                    
-                ).save()
+            Transaction(
+                tx_id=str(uuid.uuid4()),
+                user_id=str(bid.user_id),
+                bid_id=str(bid.id),
+                amount=amount,
+                payment_method="WIN",
+                status="SUCCESS",
+                created_at=datetime.utcnow(),
+            ).save()
+            winner_count += 1
+            total_payout += amount
 
-        # Mark bid as settled (win or lose both)
         bid.update(set__is_settled=True)
+        settled_count += 1
+
+    return {
+        "settled_count": settled_count,
+        "winner_count": winner_count,
+        "total_payout": total_payout,
+    }
 @router.post("/result/declare")
 def declare_result(payload: ResultDeclare, admin=Depends(require_admin)):
 
@@ -189,9 +220,12 @@ def declare_result(payload: ResultDeclare, admin=Depends(require_admin)):
     result.save()
 
     # 🔥 Settlement with session control
-    settle_results(payload.game_id, result, session)
+    settlement = settle_results(payload.game_id, result, session)
 
-    return {"message": f"{session.capitalize()} result declared & settled successfully"}
+    return {
+        "message": f"{session.capitalize()} result declared & settled successfully",
+        "settlement": settlement,
+    }
 
 # -----------------------------
 # GET RESULTS BY DATE
@@ -253,6 +287,45 @@ def find_result(date: str, game_id: str, session: str, admin=Depends(require_adm
 
     else:
         raise HTTPException(400, "Invalid session")
+
+
+@router.post("/result/{result_id}/resettle")
+def resettle_result(result_id: str, admin=Depends(require_admin)):
+    result = Result.objects(id=result_id).first()
+    if not result:
+        raise HTTPException(404, "Result not found")
+
+    start_utc, end_utc = result_day_bounds(result.date)
+    recovered_composite_bids = 0
+
+    # Older settlement code could close Jodi/Sangam bids as losses when only
+    # the open result existed. Re-open only bids that match the final result.
+    if result.close_digit and result.close_digit != "-":
+        composite_bids = Bid.objects(
+            market_id=result.market_id,
+            game_type__in=["jodi", "half_sangam", "full_sangam"],
+            bid_date__gte=start_utc,
+            bid_date__lt=end_utc,
+            is_settled=True,
+        )
+        for bid in composite_bids:
+            if is_winning_bid(bid, result, "close"):
+                bid.update(set__is_settled=False)
+                recovered_composite_bids += 1
+
+    settlements = []
+    if result.open_digit and result.open_digit != "-":
+        settlements.append(settle_results(result.market_id, result, "open"))
+    if result.close_digit and result.close_digit != "-":
+        settlements.append(settle_results(result.market_id, result, "close"))
+
+    return {
+        "message": "Result settlement completed",
+        "recovered_composite_bids": recovered_composite_bids,
+        "settled_count": sum(item["settled_count"] for item in settlements),
+        "winner_count": sum(item["winner_count"] for item in settlements),
+        "total_payout": sum(item["total_payout"] for item in settlements),
+    }
 
 
 @router.delete("/result/{result_id}")
