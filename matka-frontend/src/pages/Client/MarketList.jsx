@@ -3,7 +3,14 @@ import { Play, Info, X } from "lucide-react";
 import { FaChartLine } from "react-icons/fa6";
 
 export default function MarketList({ markets }) {
-  console.log(markets);
+  const handleClosedMarket = () => {
+    if (window.HapticFeedback?.postMessage) {
+      window.HapticFeedback.postMessage("closed-market");
+    } else if ("vibrate" in navigator) {
+      navigator.vibrate([120, 60, 120]);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {markets.map((mkt) => (
@@ -77,13 +84,15 @@ export default function MarketList({ markets }) {
                     <Play className="text-blue-300" size={18} />
                   </a>
                 ) : (
-                  <span
+                  <button
+                    type="button"
+                    onClick={handleClosedMarket}
                     aria-label={`${mkt.name} market closed`}
                     title="Market Closed"
                     className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-full border-2 border-red-400 bg-red-500/15"
                   >
                     <X className="text-red-400" size={22} strokeWidth={3} />
-                  </span>
+                  </button>
                 )}
                 <span className="text-[14px] font-semibold">
                   {mkt.status === true ? "Play" : "Closed"}

@@ -14,6 +14,9 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [site, setSite] = useState(null);
   const whatsappNumber = normalizePhoneNumber(site?.whatsapp_number);
+  const supportMessage = `For Support, Kindly Call & Whatsapp : ${
+    site?.whatsapp_number || whatsappNumber
+  }`;
   const [error, setError] = useState(null);
 
   // Redirect if NOT logged in
@@ -159,10 +162,10 @@ export default function Dashboard() {
             </a>
 
             <a
-              href={getWhatsAppUrl(whatsappNumber)}
+              href={getWhatsAppUrl(whatsappNumber, supportMessage)}
               onClick={(e) => {
                 e.preventDefault();
-                openWhatsApp(whatsappNumber);
+                openWhatsApp(whatsappNumber, supportMessage);
               }}
               rel="noopener noreferrer"
               className="mt-3 flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold hover:border-blue-200 hover:bg-white/10"
