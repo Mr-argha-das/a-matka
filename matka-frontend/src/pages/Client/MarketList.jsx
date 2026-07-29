@@ -5,9 +5,9 @@ import { FaChartLine } from "react-icons/fa6";
 export default function MarketList({ markets }) {
   const handleClosedMarket = () => {
     if (window.HapticFeedback?.postMessage) {
-      window.HapticFeedback.postMessage("closed-market");
+      window.HapticFeedback.postMessage("1200");
     } else if ("vibrate" in navigator) {
-      navigator.vibrate([120, 60, 120]);
+      navigator.vibrate(1200);
     }
   };
 
