@@ -19,6 +19,7 @@ export default function MainSettings() {
     welcome_bonus: 0,
     referral_bonus: 0,
     website_link: "",
+    facebook_pixel_id: "",
   });
 
   useEffect(() => {
@@ -166,6 +167,22 @@ export default function MainSettings() {
             placeholder="https://example.com"
             type="text"
           />
+        </div>
+
+        <div>
+          <label className="font-medium text-sm">Facebook Pixel ID</label>
+          <input
+            name="facebook_pixel_id"
+            value={formData.facebook_pixel_id}
+            onChange={handleChange}
+            className="w-full mt-1 px-3 py-2 border border-gray-50/20 rounded"
+            placeholder="10125888414888453"
+            type="text"
+            inputMode="numeric"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Blank chhodne par Pixel tracking band rahegi.
+          </p>
         </div>
       </div>
 

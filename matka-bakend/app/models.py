@@ -202,6 +202,7 @@ class SiteSettings(Document):
     welcome_bonus = FloatField(default=0)
     referral_bonus = FloatField(default=0)
     website_link = StringField(default="")
+    facebook_pixel_id = StringField(default="")
     meta = {"collection": "site_settings"}
 
 

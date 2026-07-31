@@ -25,6 +25,7 @@ def get_settings():
         "welcome_bonus": s.welcome_bonus,
         "referral_bonus" : s.referral_bonus,
         "website_link": s.website_link,
+        "facebook_pixel_id": s.facebook_pixel_id,
     }
 
 
@@ -47,6 +48,7 @@ def update_settings(payload: SettingsSchema):
     s.welcome_bonus = payload.welcome_bonus
     s.referral_bonus = payload.referral_bonus 
     s.website_link = payload.website_link
+    s.facebook_pixel_id = payload.facebook_pixel_id.strip()
 
     s.save()
     return {"status": "success", "message": "Settings updated successfully"}

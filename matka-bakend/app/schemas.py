@@ -45,6 +45,7 @@ class SettingsSchema(BaseModel):
     welcome_bonus: float
     referral_bonus :float
     website_link: str
+    facebook_pixel_id: str = ""
 
 
 class UserOut(BaseModel):
