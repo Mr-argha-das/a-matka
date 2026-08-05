@@ -8,7 +8,6 @@ import {
   ShieldAlert,
   CheckCircle,
   Ticket,
-  KeyRound,
   Lock,
 } from "lucide-react";
 import { API_URL } from "../config";
@@ -24,10 +23,7 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [mobile, setMobile] = useState("");
   const [referral_code, setReferralCode] = useState(ref || "");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [password, setPassword] = useState("");
-  const [authMode, setAuthMode] = useState("otp");
 
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -39,38 +35,13 @@ export default function SignupPage() {
     setTimeout(() => setShake(false), 400);
   };
 
-  const sendOtp = async () => {
-    if (!username || mobile.length !== 10) {
-      triggerError("Enter username and a valid mobile number first.");
-      return;
-    }
-    setIsLoading(true);
-    setMessage(null);
-    try {
-      const res = await axios.post(`${API_URL}/auth/send-otp`, {
-        mobile,
-        purpose: "register",
-      });
-      setOtpSent(true);
-      setMessage({ type: "success", text: res.data?.message || "OTP sent successfully" });
-    } catch (err) {
-      triggerError(err.response?.data?.detail || "Unable to send OTP");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleSignup = async () => {
     if (!username || !mobile || mobile.length !== 10) {
       triggerError("Enter username and a valid mobile number.");
       return;
     }
-    if (authMode === "password" && !password) {
+    if (!password) {
       triggerError("Create a password.");
-      return;
-    }
-    if (authMode === "otp" && (!otpSent || !otp)) {
-      triggerError("Send and enter the OTP.");
       return;
     }
 
@@ -78,23 +49,13 @@ export default function SignupPage() {
     setMessage(null);
 
     try {
-      let otpToken = null;
-      if (authMode === "otp") {
-        const otpResponse = await axios.post(`${API_URL}/auth/verify-otp`, {
-          mobile,
-          purpose: "register",
-          otp,
-        });
-        otpToken = otpResponse.data.otp_token;
-      }
       const res = await axios.post(
         `${API_URL}/auth/register`,
         {
           username,
           mobile,
-          password: authMode === "password" ? password : null,
+          password,
           referral_code: referral_code || null,
-          otp_token: otpToken,
         },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -212,91 +173,17 @@ export default function SignupPage() {
           </span>
         </div>
 
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-white/15" />
-          <span className="text-xs font-bold tracking-[0.2em] text-blue-200">OR</span>
-          <div className="h-px flex-1 bg-white/15" />
+        <label className="theme-label block mt-5 mb-2">Create Password</label>
+        <div className="relative">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Create password"
+            className="theme-input px-12 py-4"
+          />
+          <Lock className="theme-icon absolute left-4 top-1/2 -translate-y-1/2" />
         </div>
-
-        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-blue-300/25 bg-white/5 p-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              setAuthMode("otp");
-              setMessage(null);
-            }}
-            className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${
-              authMode === "otp" ? "bg-blue-500 text-white" : "text-blue-100 hover:bg-white/10"
-            }`}
-          >
-            Signup with OTP
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setAuthMode("password");
-              setMessage(null);
-            }}
-            className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${
-              authMode === "password" ? "bg-blue-500 text-white" : "text-blue-100 hover:bg-white/10"
-            }`}
-          >
-            Signup with Password
-          </button>
-        </div>
-
-        {authMode === "password" && (
-          <>
-            <label className="theme-label block mt-5 mb-2">Create Password</label>
-            <div className="relative">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create password"
-                className="theme-input px-12 py-4"
-              />
-              <Lock className="theme-icon absolute left-4 top-1/2 -translate-y-1/2" />
-            </div>
-          </>
-        )}
-
-        {authMode === "otp" && !otpSent && (
-          <button
-            type="button"
-            onClick={sendOtp}
-            disabled={isLoading || mobile.length !== 10}
-            className="theme-button mt-6 w-full flex items-center justify-center gap-2 py-4 font-bold disabled:opacity-50"
-          >
-            Send OTP
-          </button>
-        )}
-
-        {authMode === "otp" && otpSent && (
-          <>
-            <label className="theme-label block mt-5 mb-2">Enter OTP</label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                placeholder="Enter SMS OTP"
-                className="theme-input px-12 py-4 tracking-[0.35em]"
-              />
-              <KeyRound className="theme-icon absolute left-4 top-1/2 -translate-y-1/2" />
-            </div>
-            <button
-              type="button"
-              onClick={sendOtp}
-              disabled={isLoading}
-              className="mt-3 w-full text-center text-sm font-semibold text-blue-200 underline underline-offset-4 disabled:opacity-50"
-            >
-              Resend OTP
-            </button>
-          </>
-        )}
 
         {/* Referral Code */}
         <label className="theme-label block mt-5 mb-2">
@@ -314,25 +201,17 @@ export default function SignupPage() {
         </div>
 
         {/* Register Button */}
-        {(authMode === "password" || otpSent) && (
-          <button
-            onClick={handleSignup}
-            disabled={
-              isLoading ||
-              (authMode === "password" ? !password : !otp)
-            }
-            className="theme-button mt-6 w-full flex items-center justify-center gap-2 py-4 font-bold"
-          >
-            {isLoading ? (
-              <><LogIn className="animate-spin" /> Processing...</>
-            ) : (
-              <>
-                {authMode === "password" ? "Create Account" : "Verify OTP & Create Account"}
-                <LogIn size={19} />
-              </>
-            )}
-          </button>
-        )}
+        <button
+          onClick={handleSignup}
+          disabled={isLoading || !password}
+          className="theme-button mt-6 w-full flex items-center justify-center gap-2 py-4 font-bold disabled:opacity-50"
+        >
+          {isLoading ? (
+            <><LogIn className="animate-spin" /> Processing...</>
+          ) : (
+            <>Create Account <LogIn size={19} /></>
+          )}
+        </button>
 
         <div className="h-px bg-white/8 mt-9" />
 
