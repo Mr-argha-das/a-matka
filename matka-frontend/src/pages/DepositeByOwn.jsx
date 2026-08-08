@@ -88,6 +88,7 @@ export default function DepositeByOwn({ onRequestCreated }) {
     setPendingTx(null);
 
     if (res.data.status === "SUCCESS") {
+      window.dispatchEvent(new Event("wallet:refresh"));
       showPopup("success", "Payment successful. Wallet credited.");
     } else if (res.data.status === "PENDING") {
       showPopup("info", "Payment submitted. Status is pending.");

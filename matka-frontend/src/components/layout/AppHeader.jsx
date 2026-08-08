@@ -1,10 +1,11 @@
 // AppHeader.jsx
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Menu, Wallet2Icon } from "lucide-react";
 import { API_URL } from "../../config";
 
 // IMPORTANT: Replace with your actual base URL
 const API_BASE_URL = API_URL;
+const WALLET_REFRESH_INTERVAL = 5000;
 
 // Utility function to get the token (assumes JWT is stored in localStorage)
 const getAuthToken = () => {
@@ -14,10 +15,10 @@ const getAuthToken = () => {
 export default function AppHeader({ setSidebar }) {
   const [balance, setBalance] = useState("...");
   const [loading, setLoading] = useState(true);
+  const requestRef = useRef(null);
 
-  // Function to fetch the wallet balance
-  const fetchWalletBalance = async () => {
-    setLoading(true);
+  const fetchWalletBalance = useCallback(async (showInitialLoader = false) => {
+    if (showInitialLoader) setLoading(true);
     const token = getAuthToken();
 
     if (!token) {
@@ -26,9 +27,15 @@ export default function AppHeader({ setSidebar }) {
       return;
     }
 
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+
     try {
       const response = await fetch(`${API_BASE_URL}/user/balance`, {
         method: "GET",
+        cache: "no-store",
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -37,28 +44,52 @@ export default function AppHeader({ setSidebar }) {
 
       if (response.ok) {
         const data = await response.json();
-        // Format the balance to two decimal places
-        setBalance(data.balance.toFixed(2));
+        const nextBalance = Number(data.balance || 0).toFixed(2);
+        setBalance((current) =>
+          current === nextBalance ? current : nextBalance
+        );
       } else {
-        // Handle token expiration or other API errors
-        setBalance("N/A");
+        if (showInitialLoader) setBalance("N/A");
       }
-    } catch {
-      // Handle network errors
-      setBalance("Error");
+    } catch (error) {
+      if (error.name !== "AbortError" && showInitialLoader) {
+        setBalance("Error");
+      }
     } finally {
-      setLoading(false);
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
-  // Fetch balance when the component mounts
   useEffect(() => {
-    fetchWalletBalance();
+    fetchWalletBalance(true);
 
-    // Optional: Auto-refresh balance every 60 seconds
-    const intervalId = setInterval(fetchWalletBalance, 60000);
-    return () => clearInterval(intervalId);
-  }, []); // Run only on mount and unmount
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") fetchWalletBalance();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") fetchWalletBalance();
+    };
+
+    const intervalId = window.setInterval(
+      refreshIfVisible,
+      WALLET_REFRESH_INTERVAL
+    );
+    window.addEventListener("focus", refreshIfVisible);
+    window.addEventListener("wallet:refresh", refreshIfVisible);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshIfVisible);
+      window.removeEventListener("wallet:refresh", refreshIfVisible);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      requestRef.current?.abort();
+    };
+  }, [fetchWalletBalance]);
 
   return (
     <header className="w-full z-40">
