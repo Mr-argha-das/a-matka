@@ -5,7 +5,9 @@ import { Link } from "react-router-dom";
 
 function MarketList({ markets }) {
   const handleClosedMarket = () => {
-    if (window.HapticFeedback?.postMessage) {
+    if (window.MarketVibration?.postMessage) {
+      window.MarketVibration.postMessage("strong");
+    } else if (window.HapticFeedback?.postMessage) {
       window.HapticFeedback.postMessage("strong");
     }
     if ("vibrate" in navigator) {
@@ -89,6 +91,7 @@ function MarketList({ markets }) {
                   <button
                     type="button"
                     onClick={handleClosedMarket}
+                    data-market-closed="true"
                     aria-label={`${mkt.name} market closed`}
                     title="Market Closed"
                     className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-full border-2 border-red-400 bg-red-500/15"
