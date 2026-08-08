@@ -6,9 +6,10 @@ import { Link } from "react-router-dom";
 function MarketList({ markets }) {
   const handleClosedMarket = () => {
     if (window.HapticFeedback?.postMessage) {
-      window.HapticFeedback.postMessage("1200");
-    } else if ("vibrate" in navigator) {
-      navigator.vibrate(1200);
+      window.HapticFeedback.postMessage("strong");
+    }
+    if ("vibrate" in navigator) {
+      navigator.vibrate([250, 100, 350, 100, 500]);
     }
   };
 
