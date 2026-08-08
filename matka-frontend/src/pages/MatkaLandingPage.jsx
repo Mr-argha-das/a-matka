@@ -7,6 +7,7 @@ import MarketList from "./Client/MarketList";
 import { fetchSiteData } from "../components/layout/fetchSiteData";
 import NotificationModal from "../components/layout/NotificationModal";
 import { SiMarketo } from "react-icons/si";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const token = localStorage.getItem("accessToken");
@@ -56,7 +57,9 @@ export default function Dashboard() {
         };
       });
 
-      setMarkets(list);
+      setMarkets((current) =>
+        JSON.stringify(current) === JSON.stringify(list) ? current : list
+      );
 
       console.log("list", list);
     } catch (err) {
@@ -78,33 +81,16 @@ export default function Dashboard() {
   useEffect(() => {
     (async () => {
       const data = await fetchSiteData();
-      console.log("data ======", data);
       setSite(data);
+      setSiteData(data);
+
+      const alreadyShown = localStorage.getItem("notice_shown");
+      if (data?.notice_board_html && !alreadyShown) setShowModal(true);
     })();
   }, []);
 
   const [siteData, setSiteData] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/sitedata/get`);
-        setSiteData(res.data);
-
-        const alreadyShown = localStorage.getItem("notice_shown");
-
-        // Show modal only if notice_board_html exists and not shown before
-        if (res.data.notice_board_html && !alreadyShown) {
-          setShowModal(true);
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const handleClose = () => {
     setShowModal(false);
@@ -117,19 +103,19 @@ export default function Dashboard() {
         {/* FIXED DASHBOARD ACTIONS */}
         <div className="theme-card z-10 flex shrink-0 flex-col items-center rounded-b-[30px] border-x-0 border-t-0 px-4 py-4 text-sm shadow-lg shadow-black/15">
           <div className="w-full flex justify-between items-center">
-            <a
-              href="/add-points"
+            <Link
+              to="/add-points"
               className="flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20"
             >
               <Wallet size={18} /> Add Funds
-            </a>
+            </Link>
 
-            <a
-              href="/withdrawal-request"
+            <Link
+              to="/withdrawal-request"
               className="flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20"
             >
               <WalletCards size={18} /> Withdraw
-            </a>
+            </Link>
           </div>
 
           <div
@@ -154,12 +140,12 @@ export default function Dashboard() {
               <Play size={15} /> How to Play
             </a> */}
 
-            <a
-              href={`/starline`}
+            <Link
+              to="/starline"
               className="mt-3 flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold hover:border-blue-200 hover:bg-white/10"
             >
               <Star size={18} /> Starline
-            </a>
+            </Link>
 
             <a
               href={getWhatsAppUrl(whatsappNumber, supportMessage)}

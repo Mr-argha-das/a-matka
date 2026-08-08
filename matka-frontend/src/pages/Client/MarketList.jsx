@@ -1,8 +1,9 @@
 import React from "react";
 import { Play, Info, X } from "lucide-react";
 import { FaChartLine } from "react-icons/fa6";
+import { Link } from "react-router-dom";
 
-export default function MarketList({ markets }) {
+function MarketList({ markets }) {
   const handleClosedMarket = () => {
     if (window.HapticFeedback?.postMessage) {
       window.HapticFeedback.postMessage("1200");
@@ -16,7 +17,7 @@ export default function MarketList({ markets }) {
       {markets.map((mkt) => (
         <div
           key={mkt.id}
-          className="theme-panel w-full rounded-[24px] backdrop-blur-2xl"
+          className="theme-panel w-full rounded-[24px]"
         >
           <div className="rounded-[24px] p-4 text-white">
             <div className="flex justify-between items-center mb-2">
@@ -70,19 +71,19 @@ export default function MarketList({ markets }) {
                 </div>
               </div>
 
-              <a href={`/charts/${mkt.id}`} className="text-[#f6b64b]">
+              <Link to={`/charts/${mkt.id}`} className="text-[#f6b64b]">
                 <FaChartLine size={26} />
-              </a>
+              </Link>
 
               <div className="flex flex-col items-center gap-1">
                 {mkt.status === true ? (
-                  <a
-                    href={`/play/${mkt.id}`}
+                  <Link
+                    to={`/play/${mkt.id}`}
                     aria-label={`Play ${mkt.name}`}
                     className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-blue-400 bg-blue-500/15"
                   >
                     <Play className="text-blue-300" size={18} />
-                  </a>
+                  </Link>
                 ) : (
                   <button
                     type="button"
@@ -105,3 +106,5 @@ export default function MarketList({ markets }) {
     </div>
   );
 }
+
+export default React.memo(MarketList);

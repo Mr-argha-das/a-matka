@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Camera, CheckCircle2, IndianRupee, QrCode, Upload } from "lucide-react";
 import { API_URL } from "../../../config";
 import PaymentReceiveDetails from "../../../components/layout/PaymentReceiveDetails";
 
 const API_BASE = `${API_URL}/user-deposit-withdrawal`;
+const MAX_SCREENSHOT_SIZE = 10 * 1024 * 1024;
 
 const AddMoneyQrTab = () => {
-  const fileInputRef = useRef(null);
   const token = localStorage.getItem("accessToken");
 
   const [currentQR, setCurrentQR] = useState(null);
@@ -64,14 +64,25 @@ const AddMoneyQrTab = () => {
   // ------------------------------------------------------------
   // FILE PICKER
   // ------------------------------------------------------------
-  const openPicker = () => fileInputRef.current?.click();
-
   const onSelect = (e) => {
-    const f = e.target.files[0];
+    const f = e.target.files?.[0];
     if (!f) return;
+
+    if (f.type && !f.type.startsWith("image/")) {
+      alert("Please select an image screenshot");
+      e.target.value = "";
+      return;
+    }
+
+    if (f.size > MAX_SCREENSHOT_SIZE) {
+      alert("Screenshot size must be under 10 MB");
+      e.target.value = "";
+      return;
+    }
 
     setSelectedFile(f);
     setPreviewImage(URL.createObjectURL(f));
+    e.target.value = "";
   };
 
   const uploadNow = async () => {
@@ -200,27 +211,26 @@ const AddMoneyQrTab = () => {
         </p>
       </div>
 
-      {/* FILE PICKER */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={onSelect}
-        className="hidden"
-      />
-
-      <button
-        onClick={openPicker}
-        disabled={!amount || Number(amount) < (settings?.min_deposit || 0)}
+      {/* Keep the native input over the button so Android WebView receives a
+          real user gesture instead of a programmatic hidden-input click. */}
+      <label
         className={`flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500
-    py-3.5 font-bold text-white shadow-lg shadow-blue-950/30 transition hover:brightness-110
+    relative overflow-hidden py-3.5 font-bold text-white shadow-lg shadow-blue-950/30 transition hover:brightness-110
     ${
       !amount || Number(amount) < (settings?.min_deposit || 0)
-        ? "opacity-40 cursor-not-allowed"
+        ? "pointer-events-none cursor-not-allowed opacity-40"
         : ""
     }`}
       >
         <Camera size={18} /> Upload Payment Screenshot
-      </button>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+          onChange={onSelect}
+          aria-label="Choose payment screenshot"
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        />
+      </label>
 
       {/* ---------------- SUCCESS POPUP ---------------- */}
       {showSuccess && (
