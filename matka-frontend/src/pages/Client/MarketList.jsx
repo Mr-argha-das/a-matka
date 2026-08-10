@@ -5,14 +5,7 @@ import { Link } from "react-router-dom";
 
 function MarketList({ markets }) {
   const handleClosedMarket = () => {
-    if (window.MarketVibration?.postMessage) {
-      window.MarketVibration.postMessage("strong");
-    } else if (window.HapticFeedback?.postMessage) {
-      window.HapticFeedback.postMessage("strong");
-    }
-    if ("vibrate" in navigator) {
-      navigator.vibrate([250, 100, 350, 100, 500]);
-    }
+    window.MarketVibration?.postMessage("strong");
   };
 
   return (
@@ -35,9 +28,8 @@ function MarketList({ markets }) {
               </div>
 
               <span
-                className={`text-xs font-semibold ${
-                  mkt.status === true ? "text-green-400" : "text-red-400"
-                }`}
+                className={`text-xs font-semibold ${mkt.status === true ? "text-green-400" : "text-red-400"
+                  }`}
               >
                 {mkt.status === true ? "Market Running" : "Market Closed"}
               </span>

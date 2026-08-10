@@ -391,14 +391,16 @@ def get_market_results(market_id: str = Query(None), ):
             "status": "closed" if result else "open",
         }
 
-    # If a specific market_id is requested
+    # If a specific market_id is requested, return its complete result history.
+    # The monthly chart groups this list by month/year on the frontend, so
+    # returning only `.first()` here made every chart contain a single day.
     if market_id:
         market = Market.objects(id=market_id).first()
         if not market:
             raise HTTPException(status_code=404, detail="Market not found")
 
-        result = Result.objects(market_id=market_id).order_by("-date").first()
-        return [build_response(market, result)]
+        results = Result.objects(market_id=str(market.id)).order_by("date")
+        return [build_response(market, result) for result in results]
 
     # Return ALL markets
     all_markets = Market.objects()
