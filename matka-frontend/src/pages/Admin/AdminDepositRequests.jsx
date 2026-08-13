@@ -47,16 +47,19 @@ export default function AdminDepositRequests() {
   // };
 
   const [openImage, setOpenImage] = useState(null);
+  const [openUtr, setOpenUtr] = useState("");
   const [zoom, setZoom] = useState(1);
 
-  const viewScreenshot = (url) => {
+  const viewScreenshot = (url, utr) => {
     console.log(API_URL + url);
     setZoom(1);
     setOpenImage(url);
+    setOpenUtr(utr || "Not provided");
   };
 
   const closeModal = () => {
     setOpenImage(null);
+    setOpenUtr("");
     setZoom(1);
   };
 
@@ -215,7 +218,7 @@ export default function AdminDepositRequests() {
                     // </td>ççç
                     <td className="px-4 py-4">
                       <button
-                        onClick={() => viewScreenshot(p.image_url)}
+                        onClick={() => viewScreenshot(p.image_url, p.trnx_id)}
                         className="text-blue-400 flex items-center gap-2 hover:text-blue-300"
                       >
                         <ImageIcon size={18} /> View
@@ -224,7 +227,7 @@ export default function AdminDepositRequests() {
                   ) : (
                     <td className="px-4 py-4">
                       <button
-                        onClick={() => viewScreenshot(p.image_url)}
+                        onClick={() => viewScreenshot(p.image_url, p.trnx_id)}
                         className="text-blue-400 flex items-center gap-2 hover:text-blue-300"
                       >
                         AUTO
@@ -307,13 +310,22 @@ export default function AdminDepositRequests() {
                 </div>
 
                 {/* Image */}
-                <div className="overflow-auto max-h-[75vh] flex justify-center">
+                <div className="overflow-auto max-h-[65vh] flex justify-center">
                   <img
                     src={API_URL + openImage}
                     alt="Screenshot"
                     style={{ transform: `scale(${zoom})` }}
                     className="transition-transform duration-200 origin-center"
                   />
+                </div>
+
+                <div className="mt-3 rounded-lg border border-cyan-500/30 bg-gray-900 px-4 py-3 text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    UTR / UTC Number
+                  </p>
+                  <p className="mt-1 break-all text-lg font-bold tracking-wider text-cyan-300">
+                    {openUtr}
+                  </p>
                 </div>
               </div>
             </div>

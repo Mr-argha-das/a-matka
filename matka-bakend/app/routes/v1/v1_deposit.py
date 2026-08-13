@@ -39,11 +39,11 @@ async def upload_qr(
     image: UploadFile = File(...),
     user=Depends(get_current_user)
 ):
-    trnx = "".join((trnx or "").split()).upper()
+    trnx = (trnx or "").strip()
     if not trnx:
-        raise HTTPException(400, "UTR/UTC number is required")
-    if len(trnx) < 6 or len(trnx) > 30 or not trnx.isalnum():
-        raise HTTPException(400, "Enter a valid UTR/UTC number")
+        raise HTTPException(400, "UTR number is required")
+    if len(trnx) != 12 or not trnx.isdigit():
+        raise HTTPException(400, "UTR number must be exactly 12 digits")
 
     if DepositQR.objects(trnx_id=trnx).first():
         raise HTTPException(409, "This UTR/UTC number already exists. Deposit rejected.")

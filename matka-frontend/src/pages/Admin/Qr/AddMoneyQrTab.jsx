@@ -100,9 +100,9 @@ const AddMoneyQrTab = () => {
       return;
     }
 
-    const normalizedUtr = utrNumber.replace(/\s/g, "").toUpperCase();
-    if (!/^[A-Z0-9]{6,30}$/.test(normalizedUtr)) {
-      alert("Please enter a valid UTR/UTC number");
+    const normalizedUtr = utrNumber.trim();
+    if (!/^\d{12}$/.test(normalizedUtr)) {
+      alert("UTR number must be exactly 12 digits");
       return;
     }
 
@@ -268,9 +268,11 @@ const AddMoneyQrTab = () => {
               <input
                 type="text"
                 value={utrNumber}
-                onChange={(e) => setUtrNumber(e.target.value.toUpperCase())}
-                placeholder="Enter transaction number"
-                maxLength={30}
+                onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                placeholder="Enter 12 digit UTR number"
+                maxLength={12}
+                inputMode="numeric"
+                pattern="[0-9]{12}"
                 autoComplete="off"
                 className="w-full rounded-xl border border-blue-200/25 bg-white px-3 py-2.5 font-semibold text-[#132a50] outline-none focus:border-cyan-400"
               />
@@ -290,7 +292,7 @@ const AddMoneyQrTab = () => {
               <button
                 className="w-1/2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-2.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={uploadNow}
-                disabled={uploading || !utrNumber.trim()}
+                disabled={uploading || !/^\d{12}$/.test(utrNumber)}
               >
                 {uploading ? "Checking..." : "Upload"}
               </button>
