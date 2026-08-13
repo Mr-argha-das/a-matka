@@ -13,6 +13,8 @@ const AddMoneyQrTab = () => {
   const [currentQR, setCurrentQR] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [utrNumber, setUtrNumber] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [amount, setAmount] = useState(
     () => localStorage.getItem("add_amount") || ""
   );
@@ -98,12 +100,20 @@ const AddMoneyQrTab = () => {
       return;
     }
 
+    const normalizedUtr = utrNumber.replace(/\s/g, "").toUpperCase();
+    if (!/^[A-Z0-9]{6,30}$/.test(normalizedUtr)) {
+      alert("Please enter a valid UTR/UTC number");
+      return;
+    }
+
     const fd = new FormData();
     fd.append("image", selectedFile);
     fd.append("amount", amount);
     fd.append("method", localStorage.getItem("add_method") || "UPI QR");
+    fd.append("trnx", normalizedUtr);
 
     try {
+      setUploading(true);
       const res = await axios.post(`${API_BASE}/upload`, fd, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -116,6 +126,7 @@ const AddMoneyQrTab = () => {
 
       setPreviewImage(null);
       setSelectedFile(null);
+      setUtrNumber("");
       setShowSuccess(true);
       fetchCurrentQR();
 
@@ -123,6 +134,8 @@ const AddMoneyQrTab = () => {
     } catch (err) {
       console.log("UPLOAD ERROR:", err);
       alert(err.response?.data?.detail || "Screenshot upload failed");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -248,6 +261,21 @@ const AddMoneyQrTab = () => {
             </div>
             <img src={previewImage} alt="Payment screenshot preview" className="mb-4 w-full rounded-xl" />
 
+            <label className="mb-4 block">
+              <span className="mb-1.5 block text-xs font-semibold text-blue-100">
+                UTR / UTC Number
+              </span>
+              <input
+                type="text"
+                value={utrNumber}
+                onChange={(e) => setUtrNumber(e.target.value.toUpperCase())}
+                placeholder="Enter transaction number"
+                maxLength={30}
+                autoComplete="off"
+                className="w-full rounded-xl border border-blue-200/25 bg-white px-3 py-2.5 font-semibold text-[#132a50] outline-none focus:border-cyan-400"
+              />
+            </label>
+
             <div className="flex gap-3">
               <button
                 className="w-1/2 rounded-xl border border-white/10 bg-white/5 py-2.5 font-semibold text-white"
@@ -260,10 +288,11 @@ const AddMoneyQrTab = () => {
               </button>
 
               <button
-                className="w-1/2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-2.5 font-semibold text-white"
+                className="w-1/2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-2.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={uploadNow}
+                disabled={uploading || !utrNumber.trim()}
               >
-                Upload
+                {uploading ? "Checking..." : "Upload"}
               </button>
             </div>
           </div>

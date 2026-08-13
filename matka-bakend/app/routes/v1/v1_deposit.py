@@ -10,6 +10,7 @@ import uuid
 
 from ...auth import get_current_user, require_admin
 from ...models import DepositQR, Transaction, Wallet, User, Withdrawal
+from mongoengine.errors import NotUniqueError
 
 router = APIRouter(prefix="/user-deposit-withdrawal", tags=["Deposit Withdrawal"])
 
@@ -32,12 +33,21 @@ MAX_IMAGE_SIZE = 10 * 1024 * 1024
 
 @router.post("/upload")
 async def upload_qr(
-    trnx: str = Form(None),
+    trnx: str = Form(...),
     amount: float = Form(...),
     method: str = Form(...),
     image: UploadFile = File(...),
     user=Depends(get_current_user)
 ):
+    trnx = "".join((trnx or "").split()).upper()
+    if not trnx:
+        raise HTTPException(400, "UTR/UTC number is required")
+    if len(trnx) < 6 or len(trnx) > 30 or not trnx.isalnum():
+        raise HTTPException(400, "Enter a valid UTR/UTC number")
+
+    if DepositQR.objects(trnx_id=trnx).first():
+        raise HTTPException(409, "This UTR/UTC number already exists. Deposit rejected.")
+
     # Validate amount
     if amount <= 0:
         raise HTTPException(400, "Amount must be positive")
@@ -77,13 +87,19 @@ async def upload_qr(
         created_at= datetime.datetime.utcnow(),
         updated_at= datetime.datetime.utcnow()
     )
-    qr.save()
+    try:
+        qr.save()
+    except NotUniqueError:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(409, "This UTR/UTC number already exists. Deposit rejected.")
 
     return {
         "message": "QR uploaded successfully",
         "id": str(qr.id),
         "amount": amount,
         "method": method,
+        "trnx_id": qr.trnx_id,
         "image_url": qr.image_url
     }
 

@@ -152,6 +152,7 @@ export default function AdminDepositRequests() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs">User</th>
                 <th className="px-4 py-3 text-left text-xs">Method</th>
+                <th className="px-4 py-3 text-left text-xs">UTR / UTC</th>
                 <th className="px-4 py-3 text-left text-xs">Amount</th>
                 <th className="px-4 py-3 text-left text-xs">Status</th>
                 <th className="px-4 py-3 text-left text-xs">Screenshot</th>
@@ -175,6 +176,10 @@ export default function AdminDepositRequests() {
                   {/* METHOD */}
                   <td className="px-4 py-4 text-sm text-gray-300">
                     {p.method || "—"}
+                  </td>
+
+                  <td className="px-4 py-4 text-sm font-semibold text-cyan-300">
+                    {p.trnx_id || "—"}
                   </td>
 
                   {/* AMOUNT */}

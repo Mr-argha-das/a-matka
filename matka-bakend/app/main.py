@@ -83,8 +83,6 @@ from app.routes.v1 import (
     v1_deposit,
     v1_refer_routes,
     v1_devloper_routes,
-    v1_autoPay_routes,
-    v1_payment_routes,
 
 
 )
@@ -99,7 +97,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # 5. ADD ROUTES
 # -----------------------------
 app.include_router(auth_routes.router)
-app.include_router(v1_payment_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(user_routes.router)
 app.include_router(withdrawal_routes.router)
@@ -124,7 +121,6 @@ app.include_router(v1_game_godawari.router)
 app.include_router(v1_deposit.router)
 app.include_router(v1_refer_routes.router)
 app.include_router(v1_devloper_routes.router)
-app.include_router(v1_autoPay_routes.router)
 
 # -----------------------------
 # 6. ROOT API

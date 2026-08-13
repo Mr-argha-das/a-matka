@@ -115,7 +115,7 @@ class Withdrawal(Document):
 class DepositQR(Document):
     user_id = StringField(required=True)
     image_url = StringField(required=True)
-    trnx_id = StringField(required=False)
+    trnx_id = StringField(required=False, unique=True, sparse=True)
     status = StringField(default="pending")  
     amount = FloatField(default=0)
     method = StringField()

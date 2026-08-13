@@ -1,17 +1,11 @@
 // src/pages/AddMoney.jsx
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, HistoryIcon, QrCode, Smartphone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, HistoryIcon } from "lucide-react";
 import AddMoneyQrTab from "./Admin/Qr/AddMoneyQrTab";
 import axios from "axios";
-import DepositeByOwn from "./DepositeByOwn";
 import { API_URL } from "../config";
 
 export default function AddMoney() {
-  const [activeTab, setActiveTab] = useState("auto");
-
-  const [showAutoNotice, setShowAutoNotice] = useState(false);
-  const qrRef = useRef(null);
-
   const [settings, setSettings] = useState(null);
 
   console.log(settings);
@@ -28,24 +22,8 @@ export default function AddMoney() {
   }
 
   useEffect(() => {
-    // if (activeTab === "auto") {
     load();
-    // }
-  }, [activeTab]);
-
-  const goToQrSection = () => {
-    setActiveTab("qr");
-    setTimeout(() => {
-      qrRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 300);
-  };
-
-  // Trigger 3-sec notification
-  const triggerAutoNotice = () => {
-    setShowAutoNotice(true);
-    goToQrSection();
-    setTimeout(() => setShowAutoNotice(false), 3000);
-  };
+  }, []);
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center pb-22 font-sans">
@@ -69,50 +47,9 @@ export default function AddMoney() {
         </a>
       </div>
 
-      {/* Tabs */}
-      <div className="mx-auto mt-3 flex w-[93%] max-w-md rounded-2xl border border-blue-200/15 bg-[#132d54]/75 p-1.5 shadow-lg shadow-black/10">
-        <button
-          onClick={() => setActiveTab("auto")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-center text-xs font-bold transition ${
-            activeTab === "auto"
-              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
-              : "text-blue-100/50 hover:bg-white/5"
-          }`}
-        >
-          <Smartphone size={15} /> AUTO DEPOSIT
-        </button>
-
-        <button
-          onClick={() => setActiveTab("qr")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-center text-xs font-bold transition ${
-            activeTab === "qr"
-              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
-              : "text-blue-100/50 hover:bg-white/5"
-          }`}
-        >
-          <QrCode size={15} /> QR CODE
-        </button>
+      <div className="w-full">
+        <AddMoneyQrTab settings={settings} />
       </div>
-
-      {/* Auto Tab */}
-      {activeTab === "auto" && (
-        <DepositeByOwn
-          settings={settings}
-          onRequestCreated={triggerAutoNotice}
-        />
-      )}
-
-      {/* QR Code Tab */}
-      <div ref={qrRef} className="w-full">
-        {activeTab === "qr" && <AddMoneyQrTab settings={settings} />}
-      </div>
-
-      {/* SLIDE-UP notification */}
-      {showAutoNotice && (
-        <div className="fixed bottom-40 left-1/2 text-sm font-medium  animate-fadeIn -translate-x-1/2 bg-green-700 text-white px-4 py-2 rounded-full shadow-lg">
-          Pay And Upload Screenshot
-        </div>
-      )}
     </div>
   );
 }
